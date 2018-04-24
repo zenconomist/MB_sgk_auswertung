@@ -1,0 +1,140 @@
+Sub sgk_ausw_1()
+
+    Call turbo_be
+    Call sgk_ausw_1_1
+    Call sgk_ausw_1_2
+    Call sgk_auswertung_1_3_1_3
+    Call sgk_auswertung_2_1
+    Call turbo_ki
+    
+''ok ZKREISZ
+End Sub
+
+
+
+Sub sgk_ausw_1_1()
+'
+' sgk_ausw_1_1 Makró
+'
+
+'FONTOS: előfeltétel, hogy ne legyen bekapcsolva a frissítés!!
+
+''Eröffnung des vorherigen monatliche SGK-Auswertung (nicht das erste im Jahr machen wir mit diesem Macro)
+
+Call declare_variables
+
+'
+    ChDir v_FP
+    
+    Workbooks.Open Filename:= _
+        v_FP & "\" & v_FN
+    Windows(M_FN).Activate
+    
+
+''ok ZKREISZ_06.03.2018
+End Sub
+Sub sgk_ausw_1_2()
+'
+' sgk_ausw_1_2 Makró
+'
+
+''Als neu speichern
+
+Call declare_variables
+
+'
+    Windows(v_FN).Activate
+    Application.CutCopyMode = False
+    ActiveWorkbook.SaveAs Filename:= _
+        a_FP & "\" & a_FN _
+        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+    Windows(M_FN).Activate
+    
+''ok ZKREISZ_06.03.2018
+End Sub
+
+Sub sgk_auswertung_1_3_1_3()
+'
+' sgk_auswertung_1_3_1_3 Makró
+'
+
+''Daten aus BI-Berichten einkopieren
+
+Call declare_variables
+
+    Windows(BP_FN).Activate
+    Sheets(BP_SN).Copy Before:=Workbooks(a_FN).Sheets(1)
+    Windows(BE_FN).Activate
+    Sheets(BE_SN).Copy Before:=Workbooks(a_FN).Sheets(1)
+    Windows(BE_FN).Activate
+    ActiveWindow.Close
+    Windows(BP_FN).Activate
+    ActiveWindow.Close
+    Sheets(Array(BE_SN, BP_SN)).Select
+    Sheets(BP_SN).Activate
+    With ActiveWorkbook.Sheets(BP_SN).Tab
+        .Color = 65535
+        .TintAndShade = 0
+    End With
+    With ActiveWorkbook.Sheets(BE_SN).Tab
+        .Color = 65535
+        .TintAndShade = 0
+    End With
+    Windows(M_FN).Activate
+    
+''ok ZKREISZ_06.03.2018
+
+End Sub
+
+Sub sgk_auswertung_2_1()
+'
+' sgk_auswertung_2_1 Makró
+'
+
+''Funktionen einkopieren für BI-Periode Kategorisierung
+
+Call declare_variables
+
+'
+    Windows(a_FN).Activate
+    Sheets(BP_SN).Select
+    Columns("D:L").Select
+    Range("L1").Activate
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    Selection.ColumnWidth = 6
+    Windows(M_FN).Activate
+    Sheets("Funktionen").Select
+    Range("C1:K2").Select
+    Selection.Copy
+    Windows(a_FN).Activate
+    Sheets(BP_SN).Select
+    Range("D4").Select
+    ActiveSheet.Paste
+    Application.CutCopyMode = False
+    Range("D5:L5").Copy
+    
+    lastrow = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+    
+    Range("D6:L" & lastrow).Select
+    ActiveSheet.Paste
+    Columns("M:M").Select
+    Application.CutCopyMode = False
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    Range("M4").Select
+    ActiveCell.FormulaR1C1 = "Mapping2"
+    Range("M5").Select
+    ActiveCell.FormulaR1C1 = _
+        "=+IF(RC[-1]="""","""",VLOOKUP(RC[-1],'[" & M_FN & "]Mapping_MO'!C1:C2,2,FALSE))"
+    Range("M5").Select
+    Selection.Copy
+    Range("M5:M" & lastrow).Select
+    ActiveSheet.Paste
+    
+    Columns("D:L").Select
+    Selection.EntireColumn.Hidden = True
+
+
+''ok ZKREISZ_06.03.2018
+
+End Sub
+
