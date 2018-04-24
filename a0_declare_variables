@@ -1,0 +1,131 @@
+Public M_FP As String
+Public M_FN As String
+Public M_TN As String
+Public v_FP As String
+Public v_FN As String
+Public U_FP As String
+Public BP_FN As String
+Public BE_FN As String
+Public BP_SN As String
+Public BE_SN As String
+Public a_FP As String
+Public a_FN As String
+Public a_US As String
+Public a_Per As String
+Public per As Integer
+Public ex_FP As String
+Public ex_FN As String
+Public ex_SN As String
+Public sumif1 As Integer
+Public sumif2 As Integer
+Public a_FN2 As String
+Public a_FN3 As String
+Public a_FN_vk As String
+Public f_FN As String
+Public K_SN As String
+Public BP_PM_SN As String
+Public PM_SN As String
+Public PM_Stamm As String
+Public KSB_SN As String
+Public KOB_SN As String
+Public bezeichn As String
+Public auftrag_s As Integer
+Public IST_SN As String
+Public IST_SN_E As String
+Public IST_Table As String
+
+
+Public lastrow As Integer
+Public lastrow2 As Integer
+Public lastcolumn1 As Integer
+Public lastcolumn2 As Integer
+Public lastcolumn As Integer
+
+Public Y As Integer
+Public i As Integer
+Public b As Integer
+
+Sub declare_variables()
+    M_FP = "P:\_Departments\FC\03 Prozesse MBMH\20 Jahr 2018\CO\50 Reporting\31 Monatsbericht Abteilungen\MO"
+    M_FN = "MASTER_SGK-Ausw_MO.xlsm"
+    M_TN = "MASTER"
+    
+    v_FP = Workbooks(M_FN).Sheets(M_TN).Range("v_FP").Value
+    v_FN = Workbooks(M_FN).Sheets(M_TN).Range("v_FN").Value
+    a_FP = Workbooks(M_FN).Sheets(M_TN).Range("a_FP").Value
+    a_FN = Workbooks(M_FN).Sheets(M_TN).Range("a_FN").Value
+    U_FP = Workbooks(M_FN).Sheets(M_TN).Range("U_FP").Value
+    BP_FN = Workbooks(M_FN).Sheets(M_TN).Range("BP_FN").Value
+    BE_FN = Workbooks(M_FN).Sheets(M_TN).Range("BE_FN").Value
+    BP_SN = Workbooks(M_FN).Sheets(M_TN).Range("BP_SN").Value
+    BE_SN = Workbooks(M_FN).Sheets(M_TN).Range("BE_SN").Value
+    a_US = Workbooks(M_FN).Sheets(M_TN).Range("a_US").Value
+    a_Per = Workbooks(M_FN).Sheets(M_TN).Range("a_Per").Value
+    per = Workbooks(M_FN).Sheets(M_TN).Range("per").Value
+    ex_FP = Workbooks(M_FN).Sheets(M_TN).Range("exp_fp").Value
+    ex_FN = Workbooks(M_FN).Sheets(M_TN).Range("exp_fn").Value
+    ex_SN = Workbooks(M_FN).Sheets(M_TN).Range("exp_sn").Value
+    sumif1 = Workbooks(M_FN).Sheets(M_TN).Range("exp_r1").Value
+    sumif2 = Workbooks(M_FN).Sheets(M_TN).Range("exp_r2").Value
+    a_FN2 = Workbooks(M_FN).Sheets(M_TN).Range("a_FN2").Value
+    K_SN = Workbooks(M_FN).Sheets(M_TN).Range("K_SN").Value
+    BP_PM_SN = Workbooks(M_FN).Sheets(M_TN).Range("BP_PM_SN").Value
+    PM_SN = Workbooks(M_FN).Sheets(M_TN).Range("PM_SN").Value
+    PM_Stamm = "PM-Kostenstelle"
+    KSB_SN = Workbooks(M_FN).Sheets(M_TN).Range("KSB_SN").Value
+    KOB_SN = Workbooks(M_FN).Sheets(M_TN).Range("KOB_SN").Value
+    IST_SN = Workbooks(M_FN).Sheets(M_TN).Range("IST_SN").Value
+    IST_SN_E = Workbooks(M_FN).Sheets(M_TN).Range("IST_SN_E").Value
+    IST_Table = Workbooks(M_FN).Sheets(M_TN).Range("IST_Table").Value
+    a_FN3 = Workbooks(M_FN).Sheets(M_TN).Range("a_FN3").Value
+    a_FN_vk = Workbooks(M_FN).Sheets(M_TN).Range("a_FN_vk").Value
+    f_FN = Workbooks(M_FN).Sheets(M_TN).Range("f_FN").Value
+
+End Sub
+
+Sub turbo_be()
+    With Application
+        .ScreenUpdating = False
+        .Calculation = xlCalculationManual
+        .EnableEvents = False
+        .DisplayAlerts = False
+        .AskToUpdateLinks = False
+    End With
+End Sub
+
+Sub turbo_ki()
+    With Application
+        .ScreenUpdating = True
+        .Calculation = xlCalculationAutomatic
+        .EnableEvents = True
+        .DisplayAlerts = True
+        .AskToUpdateLinks = True
+    End With
+End Sub
+
+Public Function tabl_form(tabl_mlap, tabl_cella, tabl_nev) As ListObjects
+            
+            Sheets(tabl_mlap).Select
+            Range(tabl_cella).Select
+            Range(Selection, Selection.End(xlToRight)).Select
+            Range(Selection, Selection.End(xlDown)).Select
+            ActiveSheet.ListObjects.Add(xlSrcRange, Selection, , xlYes).Name = _
+                tabl_nev
+            Range(tabl_nev & "[#All]").Select
+            ActiveSheet.ListObjects(tabl_nev).TableStyle = "TableStyleLight1"
+
+End Function
+
+Public Function kst_masol(sn, mlap, sn_oszlop)
+
+    Sheets(sn).Select
+    Range("O8").Offset(0, per).Select
+    ActiveCell.FormulaR1C1 = _
+        "=+SUMIF('" & mlap & "'!C2,'" & sn & "'!RC1,'" & mlap & "'!C" & sn_oszlop + 2 & ")"
+    ActiveCell.Copy
+    Range("O9:O21").Offset(0, per).Select
+        Selection.PasteSpecial Paste:=xlPasteFormulas, Operation:=xlNone, _
+        SkipBlanks:=False, Transpose:=False
+    
+End Function
+
