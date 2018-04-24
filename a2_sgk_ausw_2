@@ -1,0 +1,230 @@
+Sub sgk_ausw_2()
+
+    Call turbo_be
+    Call sgk_auswertung_2_2
+    Call sgk_auswertung_2_3
+    Call sgk_auswertung_2_5
+    Call sgk_auswertung_2_6
+    Call sgk_auswertung_2_7
+    Call sgk_auswertung_2_8
+    Call turbo_ki
+    
+''ok ZKREISZ
+End Sub
+
+
+Sub sgk_auswertung_2_2()
+'
+' sgk_auswertung_2_2 Makró
+'
+
+''Daten im Mapping2 als Daten einlegen, und unnötige Säulen verstecken
+
+Call declare_variables
+
+'
+    Windows(a_FN).Activate
+    Columns("M:M").Select
+    Selection.Copy
+        
+        Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+        xlNone, SkipBlanks:=False, Transpose:=False
+
+    Windows(M_FN).Activate
+
+''ok ZKREISZ_06.03.2018
+End Sub
+
+Sub sgk_auswertung_2_3()
+'
+' sgk_auswertung_2_3 Makró
+'
+
+''Mapping Funktionen durchführen in den Stammdaten
+
+Call declare_variables
+
+'
+    Windows(a_FN).Activate
+    
+    Sheets(a_US).Select
+    Range("T5").Select
+    
+    lastcolumn = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Column
+    
+    
+    Range("A5:A13").Offset(0, lastcolumn).FormulaR1C1 = _
+        "=+SUMIF('" & BP_SN & "'!C13,'" & a_US & "'!RC2,'" & BP_SN & "'!C" & 15 + per & ")"
+
+    Range("A17:A23").Offset(0, lastcolumn).FormulaR1C1 = _
+        "=+SUMIF('" & BP_SN & "'!C13,'" & a_US & "'!RC2,'" & BP_SN & "'!C" & 15 + per & ")"
+
+    Windows(M_FN).Activate
+    
+
+''ok ZKREISZ_06.03.2018
+End Sub
+
+Sub sgk_auswertung_2_5()
+'
+' sgk_auswertung_2_5 Makró
+'
+
+''ExpatKosten Subtraktion
+
+Call declare_variables
+
+     Workbooks.Open Filename:= _
+        ex_FP & "\" & ex_FN
+        
+'
+    Windows(a_FN).Activate
+    Sheets(a_US).Select
+    Range("T8").Select
+    
+    lastcolumn = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Column
+    
+    Range("A8").Offset(0, lastcolumn - 1).Select
+    ActiveCell.FormulaR1C1 = _
+        "=+SUMIF('" & BP_SN & "'!C13,'" & a_US & "'!RC2,'" & BP_SN & "'!C" & 15 + per & ")-[" & ex_FN & "]" & ex_SN & "!R" & sumif1 & "C" & 4 + per
+    Range("A19").Offset(0, lastcolumn - 1).Select
+    ActiveCell.FormulaR1C1 = _
+        "=+SUMIF('" & BP_SN & "'!C13,'" & a_US & "'!RC2,'" & BP_SN & "'!C" & 15 + per & ")-[" & ex_FN & "]" & ex_SN & "!R" & sumif2 & "C" & 4 + per
+
+    Windows(M_FN).Activate
+    
+''ok ZKREISZ_06.03.2018
+
+End Sub
+
+Sub sgk_auswertung_2_6()
+'
+' sgk_auswertung_2_6 Makró
+'
+
+''Als V2 speichern
+
+Call declare_variables
+
+'
+    Windows(a_FN).Activate
+    ActiveWorkbook.SaveAs Filename:= _
+        a_FP & "\" & a_FN2 _
+        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+
+''ok ZKREISZ_06.03.2018
+    
+End Sub
+
+Sub sgk_auswertung_2_7()
+'
+' sgk_auswertung_2_7 Makró
+'
+
+''Kostenarten zu behaupten
+
+Call declare_variables
+
+'
+    Windows(a_FN2).Activate
+    Sheets(BP_SN).Select
+    Columns("C:M").Select
+    Selection.EntireColumn.Hidden = False
+    Columns("N:N").Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    Range("N5").Select
+    ActiveCell.FormulaR1C1 = "=+IF(RC[-10]=4,LEFT(RC[-11],8),"""")"
+    Range("N5").Select
+    Selection.Copy
+    Range("M5").Select
+    
+    lastrow = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+    Range("N5:N" & lastrow).Select
+    ActiveSheet.Paste
+    Columns("N:N").Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Sheets.Add.Name = K_SN
+    Sheets(K_SN).Select
+    Range("A:A").Select
+    
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+    xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Application.CutCopyMode = False
+    Selection.AutoFilter
+    ActiveSheet.Range("A:A").AutoFilter Field:=1, Criteria1:="<>"
+    Columns("A:A").Select
+    Selection.Copy
+    Columns("C:C").Select
+    Application.Run "PERSONAL.XLSB!ertekszambeill"
+    Columns("A:B").Select
+    Application.CutCopyMode = False
+    Selection.Delete Shift:=xlToLeft
+    Range("A1").Select
+    ActiveCell.FormulaR1C1 = "Kostenarten"
+    Sheets(K_SN).Select
+    Sheets(BP_SN).Select
+    Selection.Delete Shift:=xlToLeft
+    Columns("D:L").Select
+    Selection.EntireColumn.Hidden = True
+    Sheets(K_SN).Select
+
+
+    Columns("A:A").Select
+    ActiveSheet.Range("A:A").RemoveDuplicates Columns:=1, Header:= _
+        xlNo
+
+''ok ZKREISZ_06.03.2018
+
+End Sub
+
+Sub sgk_auswertung_2_8()
+'
+' sgk_auswertung_2_8 Makró
+'
+
+''Auftragsnummer/PM's behaupten
+
+
+Call declare_variables
+'
+
+    Windows(a_FN2).Activate
+    Sheets(BE_SN).Select
+    Columns("F:F").Select
+    Selection.Copy
+    Sheets.Add.Name = PM_SN
+    ActiveSheet.Paste
+    Columns("A:A").Select
+    ActiveSheet.Range("A:A").RemoveDuplicates Columns:=1, Header:=xlNo
+    Sheets(PM_SN).Select
+    Range("A1").Select
+    
+    lastrow = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+    Range("A1:A" & lastrow).Select
+    ActiveSheet.ListObjects.Add(xlSrcRange, Selection, , xlYes).Name _
+        = "PM-Nummer"
+    Range("B2").Select
+    ActiveCell.FormulaR1C1 = _
+        "=+IF(LEFT([@Kontierungsobjekt],1)=""K"","""",RIGHT([@Kontierungsobjekt],10))"
+    Range("B3").Select
+    
+    Columns("B:B").Select
+    Selection.Copy
+    Columns("D:D").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+    ActiveSheet.Range("$D$1:$D$200").RemoveDuplicates Columns:=1, Header:=xlNo
+        Sheets(PM_SN).Select
+    With ActiveWorkbook.Sheets(PM_SN).Tab
+        .Color = 65535
+        .TintAndShade = 0
+    End With
+    
+    ActiveWorkbook.Save
+
+''ok ZKREISZ_06.03.2018
+    
+End Sub
