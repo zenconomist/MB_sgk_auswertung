@@ -1,0 +1,847 @@
+
+
+Sub sgk_ausw_3()
+
+
+''IST_Tabelle Herstellen
+''File als V3 anders speichern
+''KostenstellenBenennung hinzufügen in IST-Tabelle
+''PivotTabellen - Refreshing
+''KST-Tabellen auffüllen
+    
+    Call turbo_be
+    Application.Calculation = xlCalculationAutomatic
+    
+        Call sgk_auswertung_3_3_1
+        Call sgk_auswertung_3_3_2
+        Call sgk_auswertung_3_3_3
+        Call sgk_auswertung_3_3_4
+        Call sgk_auswertung_3_4
+        Call sgk_auswertung_3_5
+        Call sgk_auswertung_3_6
+        Call sgk_auswertung_3_7
+        Call sgk_auswertung_3_8
+        Call sgk_auswertung_3_9
+        
+    Application.Calculation = xlCalculationManual
+    Call turbo_ki
+    
+    Sheets(Array(PM_SN, BE_SN, K_SN, BP_SN, KSB_SN, KOB_SN, IST_SN_E)).Select
+    ActiveWindow.SelectedSheets.Visible = False
+
+End Sub
+
+
+
+
+Sub sgk_auswertung_3_3_1()
+'
+' sgk_auswertung_3_3_1 Makró
+'
+''ins KOB1 Abfrage die Kostenstellen einfügen
+
+Call declare_variables
+Dim auftrag_s As Integer
+Dim bezeichn As String
+'
+    Windows(a_FN2).Activate
+    Sheets(KOB_SN).Select
+    
+    
+    Range("A1").Select
+    lastrow = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+    lastcolumn1 = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Column
+    
+        ''Auftrag-Säule und RC[-Y] zu behaupten
+        Range("XX2").Select
+        ActiveCell.FormulaR1C1 = _
+            "=+MATCH(""Auftrag"",R[-1],0)"
+        auftr_s = Range("XX2").Value
+        'Y = lastcolumn1 - auftrag_s
+        
+        Range("XX2").Delete
+        
+    
+    
+    Range("A1").Offset(0, lastcolumn1).Select
+    ActiveCell.FormulaR1C1 = "Kostenstelle"
+    
+    Range("A2").Offset(0, lastcolumn1).Select
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = _
+        "=+VLOOKUP(RC" & auftr_s & ",'" & M_FN & "'!PMs[#All],4,FALSE)"
+    Range("A2").Offset(0, lastcolumn1).Select
+    Selection.Copy
+    
+    Range("A2:A" & lastrow).Offset(0, lastcolumn1).Select
+    ActiveSheet.Paste
+    
+    Sheets(KSB_SN).Select
+    
+    Range("A1").Select
+    lastrow2 = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+    lastcolumn2 = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Column
+    
+    Range("A1").Offset(0, lastcolumn2).Select
+    ActiveCell = "Expat"
+    
+    Range("XX2").Select
+    ActiveCell.FormulaR1C1 = "=+MATCH(""Bezeichnung"",R[-1],0)"
+    
+    bezeichn = Range("XX2").Value
+    
+    Range("XX2").Delete
+    
+    
+    Range("A2").Offset(0, lastcolumn2).Select
+    ActiveCell.FormulaR1C1 = "=+IF(LEFT(RC" & bezeichn & ",5)=""EXPAT"",""EXPAT"","""")"
+    Range("A2").Offset(0, lastcolumn2).Select
+    Selection.AutoFill Destination:=Range("A2:A" & lastrow2).Offset(0, lastcolumn2)
+
+''ok_KZS_06.03.2018
+
+End Sub
+
+Sub sgk_auswertung_3_3_2()
+'
+' sgk_auswertung_3_3_2 Makró
+''in diesem Macro kopieren wir die Daten aus KSB1 Abfrage nötig für IST_0XX
+
+'
+Call declare_variables
+'
+    Windows(a_FN2).Activate
+    
+    Sheets.Add.Name = IST_SN
+    
+    Sheets(KSB_SN).Select
+    
+    Range("A1").Select
+    lastrow = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+    
+    i = 1
+    
+    Do
+    
+        Sheets(KSB_SN).Select
+        Range("XX" & i + 1).Select
+        ActiveCell.FormulaR1C1 = "=+MATCH(" & Workbooks(M_FN).Sheets("Kopfbeleg").Range("A" & i + 1) & ",R1,0)"
+                
+            If IsError(Range("XX" & i + 1).Value) = True Then
+            
+                i = i + 1
+                Range("XX" & i + 1).Select
+                ActiveCell.FormulaR1C1 = "=+MATCH(" & Workbooks(M_FN).Sheets("Kopfbeleg").Range("A" & i + 1) & ",R1,0)"
+                b = Range("XX" & i + 1).Value
+                
+                    Range("A:A").Offset(0, b - 1).Copy
+                        
+                Sheets(IST_SN).Select
+                Range("A1").Offset(0, i - 1).Select
+                        Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+                        xlNone, SkipBlanks:=False, Transpose:=False
+            Else
+                                b = Range("XX" & i + 1).Value
+                
+                    Range("A:A").Offset(0, b - 1).Copy
+                        
+                Sheets(IST_SN).Select
+                Range("A1").Offset(0, i - 1).Select
+                        Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+                        xlNone, SkipBlanks:=False, Transpose:=False
+
+                
+            End If
+        
+        i = i + 1
+     
+     Loop Until i = 23
+
+                Sheets(KSB_SN).Select
+                Range("XX" & i - 22 & ":XX" & i + 1).Delete
+                
+
+    Sheets(IST_SN).Select
+    Cells.EntireColumn.AutoFit
+
+    With ActiveWorkbook.Sheets(IST_SN).Tab
+        .Color = 255
+        .TintAndShade = 0
+    End With
+    
+''ok_KZS_06.03.2018
+
+End Sub
+
+
+
+Sub sgk_auswertung_3_3_3()
+'
+' sgk_auswertung_3_3_3 Makró
+'
+Call declare_variables
+'
+    Windows(a_FN2).Activate
+    
+    Sheets(IST_SN).Select
+    
+    Range("A1").Select
+    lastrow = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+    
+    Sheets(KOB_SN).Select
+    Range("A1").Select
+    lastrow2 = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+    
+    i = 1
+    
+    Do
+        Sheets(KOB_SN).Select
+        Range("XX" & i + 1).Select
+        ActiveCell.FormulaR1C1 = "=+MATCH(" & Workbooks(M_FN).Sheets("Kopfbeleg").Range("A" & i + 1) & ",R1,0)"
+            
+        If IsError(Range("XX" & i + 1).Value) = True Then
+            i = i + 1
+                Range("XX" & i + 1).Select
+                ActiveCell.FormulaR1C1 = "=+MATCH(" & Workbooks(M_FN).Sheets("Kopfbeleg").Range("A" & i + 1) & ",R1,0)"
+                b = Range("XX" & i + 1).Value
+                
+                Range("A2:A" & lastrow2).Offset(0, b - 1).Copy
+                
+            Sheets(IST_SN).Select
+            Range("A1").Offset(lastrow, i - 1).Select
+                    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+                    xlNone, SkipBlanks:=False, Transpose:=False
+        
+        Else
+                b = Range("XX" & i + 1).Value
+                
+                Range("A2:A" & lastrow2).Offset(0, b - 1).Copy
+                
+            Sheets(IST_SN).Select
+            Range("A1").Offset(lastrow, i - 1).Select
+                    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+                    xlNone, SkipBlanks:=False, Transpose:=False
+        End If
+        
+        i = i + 1
+        
+    Loop Until i = 23
+
+    
+                Sheets(KOB_SN).Select
+                Range("XX" & i - 22 & ":XX" & i + 1).Delete
+
+''ok_KZS_06.03.2018
+
+End Sub
+
+Sub sgk_auswertung_3_3_4()
+'
+' sgk_auswertung_3_3_4 Makró
+'
+Call declare_variables
+'
+    Windows(a_FN2).Activate
+    Sheets(IST_SN).Select
+    
+    Cells.Select
+    Selection.AutoFilter
+
+    Range("A1").Select
+    lastrow = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+
+    
+    ActiveSheet.Range("$A$1:$V$" & lastrow).AutoFilter Field:=4, Criteria1:="<>"
+    Range("A1:V" & lastrow).Select
+    Selection.Copy
+    Sheets.Add.Name = IST_SN_E
+    
+    ActiveSheet.Paste
+    Cells.Select
+    Cells.EntireColumn.AutoFit
+
+    With ActiveWorkbook.Sheets(IST_SN_E).Tab
+        .Color = 255
+        .TintAndShade = 0
+    End With
+    
+    Range("A1").Select
+    lastrow2 = ActiveCell.CurrentRegion.Cells(ActiveCell.CurrentRegion.Cells.Count).Row
+    
+    Range("A1:V" & lastrow2).Select
+    ActiveSheet.ListObjects.Add(xlSrcRange, Selection, , xlYes).Name _
+        = IST_Table
+    Range(IST_Table & "[#All]").Select
+    ActiveSheet.ListObjects(IST_Table).TableStyle = "TableStyleLight9"
+    Sheets(IST_SN).Select
+    ActiveWindow.SelectedSheets.Visible = False
+    Sheets(IST_SN_E).Select
+    Range("D1").Select
+    ActiveCell = "Kostenartenbeschreibung"
+    
+    ActiveWorkbook.Save
+    
+''ok_KZS_06.03.2018
+    
+End Sub
+
+
+Sub sgk_auswertung_3_4()
+'
+' sgk_auswertung_3_4 Makró
+'
+
+''File als V3 anders speichern
+
+Call declare_variables
+'
+    Windows(a_FN2).Activate
+    ChDir a_FP
+    ActiveWorkbook.SaveAs Filename:= _
+        a_FP & "\" & a_FN3 _
+        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+
+''ok_KZS_06.03.2018
+
+End Sub
+
+Sub sgk_auswertung_3_5()
+'
+' sgk_auswertung_3_5 Makró
+'
+
+''KostenstellenBenennung hinzufügen
+
+Call declare_variables
+
+'
+    Windows(a_FN3).Activate
+    Sheets(IST_SN_E).Select
+
+    Range(IST_Table & "[[#Headers],[Kostenstelle]]").Select
+    ActiveCell.FormulaR1C1 = "Kostenst."
+
+    Range("W1").Select
+    ActiveCell.FormulaR1C1 = "Kostenstelle"
+    Range("W2").Select
+    ActiveCell.FormulaR1C1 = _
+        "=+[@[Kostenst.]]&"" ""&VLOOKUP([@[Kostenst.]],'[" & M_FN & "]Kostenstellen'!R2C1:R14C2,2,FALSE)"
+
+''ok_KZS_06.03.2018
+
+End Sub
+
+Sub sgk_auswertung_3_6()
+'
+' sgk_auswertung_3_6 Makró
+'
+
+''PivotTabellen - MontageThemen Refreshing
+
+Call declare_variables
+
+'
+    Windows(a_FN3).Activate
+    Sheets("Montage Themen").Select
+    Range("C5").Select
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Kostenstelle")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+
+''ok_KZS_06.03.2018
+
+End Sub
+
+Sub sgk_auswertung_3_7()
+
+'
+' sgk_auswertung_3_7 Makró
+'
+
+''PivotTabellen - MontageKST Refreshing
+
+Call declare_variables
+'
+    Windows(a_FN3).Activate
+    Sheets("Montage KST").Select
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    '( _
+    '    "Montage Themen!PivotTable1")
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+''ok_KZS_06.03.2018
+
+End Sub
+
+
+Sub sgk_auswertung_3_8()
+
+'
+' sgk_auswertung_3_8 Makró
+'
+
+''PivotTabellen - Leitung, etc. Refreshing
+
+Call declare_variables
+Dim s1 As String
+Dim s2 As String
+Dim s3 As String
+Dim s4 As String
+Dim s5 As String
+Dim s6 As String
+Dim s7 As String
+Dim s8 As String
+
+
+s1 = "Leitung"
+s2 = "IB"
+s3 = "FW"
+s4 = "EOL"
+s5 = "MOSE"
+s6 = "QS"
+s7 = "IH"
+s8 = "EQC"
+
+'
+
+
+
+    Windows(a_FN3).Activate
+
+
+''S1
+    Sheets(s1).Select
+    
+    Columns("A").Offset(0, per + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    Columns("A").Offset(0, ((per + 2) * 2) + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+
+    ActiveSheet.PivotTables("PivotTable2").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+
+    ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+
+
+''S2
+    Sheets(s2).Select
+    
+    Columns("A").Offset(0, per + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    Columns("A").Offset(0, ((per + 2) * 2) + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+
+    ActiveSheet.PivotTables("PivotTable2").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+
+    ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+    
+    
+    
+''S3
+    Sheets(s3).Select
+    
+    Columns("A").Offset(0, per + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    Columns("A").Offset(0, ((per + 2) * 2) + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+
+    ActiveSheet.PivotTables("PivotTable2").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+
+    ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+    
+    
+    
+''S4
+    Sheets(s4).Select
+    
+    Columns("A").Offset(0, per + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    Columns("A").Offset(0, ((per + 2) * 2) + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+
+    ActiveSheet.PivotTables("PivotTable2").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+
+    ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+    
+    
+    
+''S5
+    Sheets(s5).Select
+    
+    Columns("A").Offset(0, per + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    Columns("A").Offset(0, ((per + 2) * 2) + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+
+    ActiveSheet.PivotTables("PivotTable2").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+
+    ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+    
+    
+''S6
+    Sheets(s6).Select
+    
+    Columns("A").Offset(0, per + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    Columns("A").Offset(0, ((per + 2) * 2) + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+
+    ActiveSheet.PivotTables("PivotTable2").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+
+    ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+    
+    
+''S7
+    Sheets(s7).Select
+    
+    Columns("A").Offset(0, per + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    Columns("A").Offset(0, ((per + 2) * 2) + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+
+    ActiveSheet.PivotTables("PivotTable2").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+
+    ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+    
+    
+''S8
+    Sheets(s8).Select
+    
+    Columns("A").Offset(0, per + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    Columns("A").Offset(0, ((per + 2) * 2) + 2).Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+
+    
+    ActiveSheet.PivotTables("PivotTable1").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+    
+    ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+
+
+    ActiveSheet.PivotTables("PivotTable2").ChangePivotCache ActiveWorkbook. _
+        PivotCaches.Create(SourceType:=xlDatabase, SourceData:=IST_Table, Version _
+        :=xlPivotTableVersion15)
+
+    ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat").CurrentPage = _
+        "(All)"
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Expat")
+        .PivotItems("").Visible = True
+        .PivotItems("(blank)").Visible = True
+        .PivotItems("EXPAT").Visible = False
+    End With
+    
+End Sub
+
+Sub sgk_auswertung_3_9()
+'
+' sgk_auswertung_3_9 Makró
+'
+
+Call declare_variables
+Dim kart_kst_mlap As String
+
+kart_kst_mlap = "Kart_KST_" & per
+
+'
+    Windows(a_FN3).Activate
+    Sheets(BE_SN).Select
+    Range("B1").Select
+    ActiveCell.FormulaR1C1 = "1"
+    Range("G1").Select
+    ActiveCell.FormulaR1C1 = "2"
+    Range("I1").Select
+    ActiveCell.FormulaR1C1 = "3"
+    Range("M1").Select
+    ActiveCell.FormulaR1C1 = "4"
+    Range("Q1").Select
+    ActiveCell.FormulaR1C1 = "5"
+    Range("R1").Select
+    ActiveCell.FormulaR1C1 = "'Menge"
+    
+''táblázatformázás függvénnyel
+    
+    tabl_form BE_SN, "A1", "Einzel_" & per
+
+    Sheets.Add.Name = kart_kst_mlap
+    
+    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "Einzel_" & per, Version:=xlPivotTableVersion15). _
+        CreatePivotTable TableDestination:=kart_kst_mlap & "!R3C1", TableName:="Kimutatás1", _
+        DefaultVersion:=xlPivotTableVersion15
+    Sheets(kart_kst_mlap).Select
+    Cells(3, 1).Select
+    With ActiveSheet.PivotTables("Kimutatás1").PivotFields("Akt. Kostenstelle")
+        .Orientation = xlColumnField
+        .Position = 1
+    End With
+    With ActiveSheet.PivotTables("Kimutatás1").PivotFields("Präfixkostenart")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    ActiveSheet.PivotTables("Kimutatás1").AddDataField ActiveSheet.PivotTables( _
+        "Kimutatás1").PivotFields("EUR"), "Összeg / EUR", xlSum
+    With ActiveSheet.PivotTables("Kimutatás1").PivotFields("Összeg / EUR")
+        .NumberFormat = "#.##0"
+    End With
+    With ActiveSheet.PivotTables("Kimutatás1").PivotFields("Geschäftsj./Periode")
+        .Orientation = xlRowField
+        .Position = 2
+    End With
+    With ActiveSheet.PivotTables("Kimutatás1").PivotFields("Geschäftsj./Periode")
+        .Orientation = xlPageField
+        .Position = 1
+    End With
+    ActiveSheet.PivotTables("Kimutatás1").PivotFields("Geschäftsj./Periode"). _
+        ClearAllFilters
+    ActiveSheet.PivotTables("Kimutatás1").PivotFields("Geschäftsj./Periode"). _
+        CurrentPage = "0" & a_Per & ".2018"
+    
+    Cells.Select
+    Selection.Copy
+        Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+        xlNone, SkipBlanks:=False, Transpose:=False
+
+    Sheets(kart_kst_mlap).Select
+    
+    tabl_form kart_kst_mlap, "A4", "kart_kst_" & a_Per
+    
+    With ActiveWorkbook.Sheets(kart_kst_mlap).Tab
+        .Color = 49407
+        .TintAndShade = 0
+    End With
+    
+    Sheets(kart_kst_mlap).Select
+    Application.CutCopyMode = False
+    Columns("B:B").Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    Range("B4").Select
+    ActiveCell.FormulaR1C1 = "Kategorisierung"
+    Range("B5").Select
+    ActiveCell.FormulaR1C1 = _
+        "=+VLOOKUP(left(RC[-1],8),'Kostenarten-Kat'!R1C1:R124C3,3,FALSE)"
+    Columns("B:B").EntireColumn.AutoFit
+    Range("C5").Select
+    ActiveWindow.FreezePanes = True
+
+Dim sn As String
+Dim sn_oszlop As Integer
+
+    sn = "2401_Leitung"
+    sn_oszlop = 1
+    kst_masol sn, kart_kst_mlap, sn_oszlop
+    sn = "2411_IB"
+    sn_oszlop = 2
+    kst_masol sn, kart_kst_mlap, sn_oszlop
+    sn = "2421_FW"
+    sn_oszlop = 3
+    kst_masol sn, kart_kst_mlap, sn_oszlop
+    sn = "2431_EOL"
+    sn_oszlop = 4
+    kst_masol sn, kart_kst_mlap, sn_oszlop
+    sn = "2481_MOSE"
+    sn_oszlop = 5
+    kst_masol sn, kart_kst_mlap, sn_oszlop
+    sn = "2491_QS"
+    sn_oszlop = 6
+    kst_masol sn, kart_kst_mlap, sn_oszlop
+    sn = "2501_EQC"
+    sn_oszlop = 7
+    kst_masol sn, kart_kst_mlap, sn_oszlop
+    sn = "7071_IH"
+    sn_oszlop = 8
+    kst_masol sn, kart_kst_mlap, sn_oszlop
+
+    ActiveWorkbook.Save
+    
+End Sub
+
+
